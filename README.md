@@ -10,10 +10,18 @@ Aplicación web que recibe un mensaje, consulta un modelo local compatible con O
 - Muestra el historial en pantalla
 - Se ejecuta con Docker Compose
 
+
 ## Arquitectura
 
-Navegador -> FastAPI en Docker -> backend local de IA (LM Studio / Ollama) -> SQLite
-
+```text
+Navegador
+   ↓
+FastAPI (Docker)
+   ↓
+Backend IA local (LM Studio / Ollama)
+   ↓
+SQLite
+```
 ## Importante
 
 Este proyecto **no incluye el modelo dentro del contenedor**.
@@ -83,14 +91,13 @@ Abre **LM Studio** y carga el modelo que quieras usar.
 
 En una terminal ejecuta:
 
-```powershell
-$ lms server start --port 1234
+```bash
+lms server start --port 1234
 ```
 
 Si todo está correcto deberías ver algo como:
 
-```bash
-$ lms server start --port 1234
+```text
 Success! Server is now running on port 1234
 ```
 
