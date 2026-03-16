@@ -45,3 +45,27 @@ El modelo debe estar corriendo localmente en el computador host usando un backen
 ```bash
 git clone <URL_DEL_REPOSITORIO>
 cd chat_app
+```
+
+---
+
+## 2. Configuración del backend local
+
+El proyecto usa estas variables:
+
+- `MODEL_BASE_URL`: URL del backend local
+- `MODEL_API_KEY`: valor requerido por el cliente OpenAI
+- `MODEL_NAME`: nombre del modelo cargado
+- `DATABASE_URL`: ruta de SQLite
+
+El proyecto trae valores por defecto para **LM Studio**, pero se puede cambiar fácilmente para **Ollama**.
+
+### Opción A: usar LM Studio
+
+Ejemplo típico:
+
+```env
+MODEL_BASE_URL=http://host.docker.internal:1234/v1
+MODEL_API_KEY=lm-studio
+MODEL_NAME=openai/gpt-oss-20b
+DATABASE_URL=sqlite:///./data/chat.db
