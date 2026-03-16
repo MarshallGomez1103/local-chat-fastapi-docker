@@ -22,6 +22,31 @@ Backend IA local (LM Studio / Ollama)
    ↓
 SQLite
 ```
+
+## Estructura del Proyecto
+```
+.
+├── app
+│   ├── main.py
+│   ├── database.py
+│   ├── models.py
+│   └── routes.py
+├── templates
+│   └── index.html
+├── data
+│   └── chat.db
+├── docs
+│   └── interface.png
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── README.md
+```
+
+## Interface
+
+![Chat Interface](docs/interface.png)
+
 ## Importante
 
 Este proyecto **no incluye el modelo dentro del contenedor**.
