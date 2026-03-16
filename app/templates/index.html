@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Local · LM Studio / Ollama</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>Chat Local</h1>
+        <p>FastAPI + SQLite + LM Studio / Ollama</p>
+      </div>
+      <div class="badge" id="statusBadge">Conectando...</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel left">
+        <h2>Enviar mensaje</h2>
+
+        <div class="controls">
+          <label>Backend</label>
+          <select id="backendSelect">
+            <option value="lmstudio">LM Studio</option>
+            <option value="ollama">Ollama</option>
+          </select>
+
+          <label>Modelo</label>
+          <input id="modelInput" type="text" value="openai/gpt-oss-20b" />
+
+          <label>Mensaje</label>
+          <textarea id="messageInput" placeholder="Escribe aquí tu mensaje..."></textarea>
+
+          <div class="buttons">
+            <button id="sendBtn">Enviar</button>
+            <button id="clearBtn" class="secondary">Limpiar</button>
+          </div>
+        </div>
+
+        <div class="responseBox">
+          <h3>Respuesta</h3>
+          <div id="responseContent" class="responseContent">Todavía no hay respuesta.</div>
+        </div>
+
+        <div class="endpointBox">
+          <h3>URL generada</h3>
+          <code id="queryPreview">/api/chat?message=...</code>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <h2>Historial</h2>
+        <div id="historyList" class="historyList"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const backendSelect = document.getElementById("backendSelect");
+    const modelInput = document.getElementById("modelInput");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const responseContent = document.getElementById("responseContent");
+    const historyList = document.getElementById("historyList");
+    const queryPreview = document.getElementById("queryPreview");
+    const statusBadge = document.getElementById("statusBadge");
+
+    function getBackendConfig() {
+      if (backendSelect.value === "lmstudio") {
+        return {
+          base_url: "http://host.docker.internal:1234/v1",
+          api_key: "lm-studio"
+        };
+      }
+      return {
+        base_url: "http://host.docker.internal:11434/v1",
+        api_key: "ollama"
+      };
+    }
+
+    function updatePreview() {
+      const msg = encodeURIComponent(messageInput.value || "hola");
+      queryPreview.textContent = `/api/chat?message=${msg}`;
+    }
+
+    async function loadHealth() {
+      try {
+        const res = await fetch("/api/health");
+        const data = await res.json();
+        statusBadge.textContent = `OK · ${data.model_name}`;
+        statusBadge.classList.add("ok");
+      } catch {
+        statusBadge.textContent = "Error";
+        statusBadge.classList.add("bad");
+      }
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/history");
+        const data = await res.json();
+
+        historyList.innerHTML = "";
+
+        if (!data.length) {
+          historyList.innerHTML = `<div class="empty">No hay historial todavía.</div>`;
+          return;
+        }
+
+        data.forEach(item => {
+          const card = document.createElement("div");
+          card.className = "historyCard";
+          card.innerHTML = `
+            <div class="historyQuestion"><strong>Pregunta:</strong> ${item.question}</div>
+            <div class="historyAnswer"><strong>Respuesta:</strong> ${item.answer}</div>
+            <div class="historyTime">${item.timestamp}</div>
+          `;
+          historyList.appendChild(card);
+        });
+      } catch (err) {
+        historyList.innerHTML = `<div class="empty">No se pudo cargar el historial.</div>`;
+      }
+    }
+
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      const cfg = getBackendConfig();
+
+      responseContent.textContent = "Consultando modelo local...";
+      updatePreview();
+
+      try {
+        await fetch(`/api/config?base_url=${encodeURIComponent(cfg.base_url)}&api_key=${encodeURIComponent(cfg.api_key)}&model_name=${encodeURIComponent(modelInput.value.trim())}`);
+
+        const url = `/api/chat?message=${encodeURIComponent(message)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!res.ok) {
+          responseContent.textContent = data.detail || "Error consultando el backend.";
+          return;
+        }
+
+        responseContent.textContent = data.answer;
+        window.history.replaceState({}, "", `/?message=${encodeURIComponent(message)}`);
+        await loadHistory();
+        await loadHealth();
+      } catch (err) {
+        responseContent.textContent = "Hubo un error conectando con la API.";
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    clearBtn.addEventListener("click", () => {
+      messageInput.value = "";
+      responseContent.textContent = "Todavía no hay respuesta.";
+      updatePreview();
+    });
+
+    messageInput.addEventListener("input", updatePreview);
+
+    updatePreview();
+    loadHistory();
+    loadHealth();
+  </script>
+</body>
+</html>
